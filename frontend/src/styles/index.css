@@ -1,0 +1,33 @@
+@import "tailwindcss";
+html, body {
+  background-color: #fafafa;
+  font-family: sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: #1f223c; /* dark background */
+    color: #f0f0f0;            /* text color for dark mode */
+  }
+   button {
+    background-color: transparent; /* button turns white in dark mode */
+    color: white;
+  }
+
+  div.container {
+    background-color: #333333; /* container becomes gray */
+  }
+
+  input, textarea {
+    background-color: #222222;
+    color: #ffffff;
+    border-color: #555555;
+  }
+}
+ 
+@theme inline {
+  --shadow-input:
+    0px 2px 3px -1px rgba(0, 0, 0, 0.1),
+    0px 1px 0px 0px rgba(25, 28, 33, 0.02),
+    0px 0px 0px 1px rgba(25, 28, 33, 0.08);
+}
