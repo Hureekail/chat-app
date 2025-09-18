@@ -37,7 +37,7 @@ const Login = () => {
     e.preventDefault();
     api.post("/api/login/", formData)
       .then(() => {
-        navigate('/chat');
+        navigate('/main');
       })
       .catch((err) => {
         setError("User with provided credentials not found or email not verified.");

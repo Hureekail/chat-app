@@ -8,23 +8,23 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Chats from "./pages/Chats";
+import Main from "./pages/Main";
 
 function App() {
   return (
       <Provider store={store}>
-        <Router>
-            <GlobalAlert />
-            <Routes>
-              <Route path="/" element={<Start />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/verify-email/:key" element={<VerifyEmail />} />
-              <Route element={<ProtectedRoute />}> 
-                <Route path="/chat" element={<Chats/>} />
-              </Route>
-            </Routes>
-        </Router>
+          <Router>
+              <GlobalAlert />
+              <Routes>
+                <Route path="/" element={<Start />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/verify-email/:key" element={<VerifyEmail />} />
+
+                  <Route path="/main" element={<Main/>} />
+
+              </Routes>
+          </Router>
       </Provider>
   );
 }
