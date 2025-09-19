@@ -1,0 +1,18 @@
+
+li.chat {
+    background-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+
+  
+    div.container {
+      background-color: #333333; /* container becomes gray */
+    }
+  
+    input, textarea {
+      background-color: #222222;
+      color: #ffffff;
+      border-color: #555555;
+    }
+  }

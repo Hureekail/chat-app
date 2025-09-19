@@ -3,10 +3,16 @@ html, body {
   background-color: #fafafa;
   font-family: sans-serif;
 }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* stop body scroll */
+}
 
 @media (prefers-color-scheme: dark) {
   html, body {
-    background-color: #1f223c; /* dark background */
+    background-color: #000000; /* dark background */
     color: #f0f0f0;            /* text color for dark mode */
   }
    button {

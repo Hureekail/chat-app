@@ -1,39 +1,28 @@
 import { BiCheck } from "react-icons/bi"; 
 import { BiCheckDouble } from "react-icons/bi"; 
-import api from "../api";
-import { useEffect, useState } from "react";
+import { AiOutlineSearch } from "react-icons/ai"; 
+import "../styles/chats.css";
 
-
-const ChatList = ({ onOpenChat }) => {
-    const [dialogs, setDialogs] = useState([]); 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-
-    useEffect(() => {
-        api.get("api/dialogs/") 
-        .then((res) => {   
-            const items = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-            setDialogs(items);         
-            setLoading(false);           
-          })
-          .catch((err) => {
-            setError(err);
-            setLoading(false);
-          });
-      }, []);
-
-
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error.message}</p>;
+const ChatList = ({ dialogs = [], onOpenChat }) => {
 
     return (
         <div className="max-h-170 overflow-y-auto">
-            <ul className="border-b border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+            <div className="container bg-gray-200 dark:bg-black p-4 flex justify-center">
+                <div className="box">
+                    <form name="search">
+                        <input type="text" className="search-input"/>
+                    </form>
+                    <i><AiOutlineSearch className="w-8 h-8"/></i>
+                </div>
+            </div>
+            <ul>
                 {dialogs.map((dialog) => (
-                    <li key={dialog.id} onClick={() => onOpenChat?.(dialog.id)} className="flex items-center gap-3 py-2 border-b last:border-b-0 active:scale-95 transition-transform duration-100" >
+                    <li key={dialog.id} onClick={() => onOpenChat?.(dialog.id)} className="chat flex items-center gap-3 py-2 border-b border-gray-200 dark:border-gray-900 hover:bg-gray-100 active:bg-gray-100 active:scale-95 transition-transform duration-200" >
                         <img
-                            src={dialog.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(dialog.username)}
+                            src={
+                                dialog.photo ||
+                                "https://ui-avatars.com/api/?name=" + encodeURIComponent(dialog.username[0])
+                            }
                             alt="User avatar"
                             className="w-12 h-12 rounded-full object-cover bg-gray-200 m-3"
                         />
@@ -43,17 +32,19 @@ const ChatList = ({ onOpenChat }) => {
                                 <div className="flex justify-between">
                                     <div>
                                         {dialog.other_user_id === dialog.last_message.sender ? (
-                                            <div>
-                                                hello
-                                            </div>
+                                            !dialog.last_message.read ? 
+                                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold mr-2">
+                                                    {dialog.unread_count}
+                                                </div>
+                                            : null
                                         ) : (
                                             dialog.last_message.read === true ? 
                                                 <div>
-                                                    <BiCheckDouble className="w-6 h-6" color="blue"/>
+                                                    <BiCheckDouble className="w-6 h-6 text-blue-500"/>
                                                 </div>
                                             : 
                                                 <div>
-                                                    <BiCheck className="w-6 h-6" color="grey"/>
+                                                    <BiCheck className="w-6 h-6 text-gray-400"/>
                                                 </div>
                                         )}
                                     </div>
@@ -65,7 +56,7 @@ const ChatList = ({ onOpenChat }) => {
                                 </div>
                             </div>
 
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 dark:text-white">
                             {dialog.last_message.text}
                         </div>
                         </div>
