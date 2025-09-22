@@ -1,4 +1,3 @@
-import { AiOutlineSearch } from "react-icons/ai"; 
 import { IoIosChatbubbles } from "react-icons/io"; 
 import { IoMdContact } from "react-icons/io"; 
 import { IoMdSettings } from "react-icons/io";

@@ -1,8 +1,115 @@
-
 li.chat {
     background-color: transparent;
-}
+}  
+  /* Messages */
+  
+  .message {
+    color: #000;
+    clear: both;
+    line-height: 18px;
+    font-size: 15px;
+    padding: 8px;
+    position: relative;
+    margin: 0px 0;
+    max-width: 85%;
+    word-wrap: break-word;
+    z-index: -1;
+  }
 
+  .message:after {
+    position: absolute;
+    content: "";
+    width: 0;
+    height: 0;
+    border-style: solid;
+  }
+  
+  .metadata {
+    display: inline-block;
+    float: right;
+    padding: 0 0 0 7px;
+    position: relative;
+    bottom: -4px;
+  }
+  
+  .metadata .time {
+    color: rgba(0, 0, 0, .45);
+    font-size: 11px;
+    display: inline-block;
+  }
+  
+  .metadata .tick {
+    display: inline-block;
+    margin-left: 0px;
+    position: relative;
+    top: 4px;
+    height: 16px;
+    width: 16px;
+  }
+  
+  .metadata .tick svg {
+    position: absolute;
+    transition: .5s ease-in-out;
+  }
+  
+  .metadata .tick svg:first-child {
+    -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+    -webkit-transform: perspective(800px) rotateY(180deg);
+            transform: perspective(800px) rotateY(180deg);
+  }
+  
+  .metadata .tick svg:last-child {
+    -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+    -webkit-transform: perspective(800px) rotateY(0deg);
+            transform: perspective(800px) rotateY(0deg);
+  }
+  
+  .metadata .tick-animation svg:first-child {
+    -webkit-transform: perspective(800px) rotateY(0);
+            transform: perspective(800px) rotateY(0);
+  }
+  
+  .metadata .tick-animation svg:last-child {
+    -webkit-transform: perspective(800px) rotateY(-179.9deg);
+            transform: perspective(800px) rotateY(-179.9deg);
+  }
+  
+ 
+  .message.received {
+    background: #eeeeee;
+    border-radius: 15px 15px 15px 15px;
+    float: left;
+  }
+  
+  .message.received .metadata {
+    padding: 0 0 0 10px;
+  }
+  
+  .message.received:after {
+    border-radius: 13em / 3em;
+    border-width: 20px 10px 0px 10px;
+    border-color: transparent #eeeeee transparent transparent;
+    left: -12px;
+    top: 18px;
+  }
+  
+  .message.sent {
+    background: #b4dbff;
+    color: black;
+    border-radius: 15px 15px 15px 15px;
+    float: right;
+  }
+  
+  .message.sent:after {
+    border-radius: 13em / 3em;
+    border-width: 20px 10px 0px 10px;
+    border-color: transparent transparent transparent #b4dbff;
+    right: -12px;
+    top: 18px;
+  }
+  
 @media (prefers-color-scheme: dark) {
 
   

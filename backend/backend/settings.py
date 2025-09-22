@@ -34,6 +34,7 @@ REACT_DEV_SERVER = [
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -69,8 +70,12 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+
 ASGI_APPLICATION = 'backend.asgi.application'
+WSGI_APPLICATION = 'backend.wsgi.application'
+
+# Force Django to use ASGI for development
+USE_ASGI = True
 
 
 # Database
@@ -119,6 +124,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles" 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -136,9 +142,7 @@ INSTALLED_APPS += [
 
     'accounts',
     'chats',
-    'channels',
     'django_extensions',
-    'uvicorn',
 
     'allauth',
     'allauth.account',

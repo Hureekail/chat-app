@@ -1,10 +1,10 @@
 from django.urls import path, re_path
-from . import consumers
+from .consumers.chat_consumers import ChatConsumer
 from . import views
 
 app_name = 'chats'
 websocket_urlpatterns = [
-    re_path(r'^chat_ws$', consumers.ChatConsumer.as_asgi()),
+    re_path(r'^chat_ws/$', ChatConsumer.as_asgi()),
 ]
 
 urlpatterns = [
