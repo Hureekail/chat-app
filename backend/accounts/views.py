@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from django.db.models import Q
+import difflib
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -571,3 +573,34 @@ class TakenUsernameView(APIView):
         is_taken = User.objects.filter(username=username.lower()).exists()
 
         return Response({'is_taken': is_taken}, status=status.HTTP_200_OK)
+
+
+class SearchUsersView(ListAPIView):
+    """
+    Return users with similar usernames, supporting typos.
+
+    Accepts the following GET parameter: username.
+    Returns a list of users whose usernames contain the provided value
+    (case-insensitive). If none or few are found, adds fuzzy matches
+    by similarity (typo-tolerant).
+    """
+    serializer_class = api_settings.USER_DETAILS_SERIALIZER
+    allowed_methods = ('GET')
+
+    def get_queryset(self):
+        User = get_user_model()
+        username = self.request.query_params.get('username', '')
+        if not username:
+            return User.objects.none()
+
+        query = username.strip()
+        MAX_SUGGESTIONS = 30
+
+        all_usernames = list(User.objects.values_list('username', flat=True))
+        close = difflib.get_close_matches(query, all_usernames, n=MAX_SUGGESTIONS, cutoff=0.6)
+
+        qs = User.objects.filter(
+            Q(username__icontains=query) | Q(username__in=close)
+        ).distinct()
+
+        return qs

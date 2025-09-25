@@ -7,7 +7,7 @@ from accounts.views import (
     LoginView, LogoutView, PasswordChangeView, PasswordResetConfirmView,
     PasswordResetView, UserDetailsView,
     RegisterView, VerifyEmailView, ResendEmailVerificationView,
-    TakenUsernameView
+    TakenUsernameView, SearchUsersView
 )
 
 
@@ -24,6 +24,7 @@ urlpatterns = [
     #Registration and email verification
     path('', RegisterView.as_view(), name='rest_register'),
     re_path(r'check-username/?$', TakenUsernameView.as_view(), name='rest_user_name_exists'),
+    re_path(r'search-users/?$', SearchUsersView.as_view(), name='rest_search_users'),
     re_path(r'verify-email/?$', VerifyEmailView.as_view(), name='rest_verify_email'),
     re_path(r'resend-email/?$', ResendEmailVerificationView.as_view(), name="rest_resend_email"),
 

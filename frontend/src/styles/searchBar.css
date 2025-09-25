@@ -1,3 +1,11 @@
+* {
+    user-select: none;          
+    -webkit-user-select: none;   
+    -moz-user-select: none;      
+    -ms-user-select: none;  
+    cursor: default;     
+  }
+
 .box{
     position: relative;
 }
@@ -11,21 +19,53 @@
     outline: none;
     transition: .7s;
 }
-.box:hover input{
+.box:hover input,
+.box.active input{
     width: 350px;
     border-radius: 10px;
 }
 .box i{
     position: absolute;
-    top: 50%;
+    top: 65%;
     right: 32%;
     transform: translate(-50%,-50%);
     font-size: 26px;
     color: #808080;
     transition: .6s;
 }
-.box:hover i{
+.box:hover i,
+.box.active i{
     right: 0%;
+}
+
+/* Icon swap animation */
+.icon-wrapper{
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+}
+.icon{
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity .25s ease, transform .25s ease;
+}
+.search-icon{
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+.clear-icon{
+    opacity: 0;
+    transform: rotate(-90deg) scale(.8);
+}
+.box.active .search-icon{
+    opacity: 0;
+    transform: rotate(90deg) scale(.8);
+}
+.box.active .clear-icon{
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
 }
 
 @media (prefers-color-scheme: dark) {

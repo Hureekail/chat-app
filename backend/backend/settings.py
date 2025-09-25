@@ -26,6 +26,9 @@ SECRET_KEY = 'django-insecure--60a-j#)7p+j83=o1pr9t5e1g(*53*h(06ipdo0!sc6jycwuc5
 DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.18.108', 'localhost', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
 
 REACT_DEV_SERVER = [
     "http://localhost:5173/",  # React dev server
