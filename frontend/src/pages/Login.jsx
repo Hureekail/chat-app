@@ -34,15 +34,18 @@ const Login = () => {
   };
 
     const onSubmit = async (e) => {
-    e.preventDefault();
-    api.post("/api/login/", formData)
-      .then(() => {
+      e.preventDefault();
+      try {
+        const loginRes = await api.post("/api/login/", formData);
+        const userRes = await api.get("/api/user/");
+        localStorage.setItem("user_id", userRes.data.pk);
+        localStorage.setItem("username", userRes.data.username);
+        localStorage.setItem("email", userRes.data.email);
         navigate('/main');
-      })
-      .catch((err) => {
+      } catch (err) {
         setError("User with provided credentials not found or email not verified.");
-      });
-  };
+      }
+    };
     
     return (
         <div className="flex justify-center items-center mt-50">

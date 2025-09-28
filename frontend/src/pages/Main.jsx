@@ -14,6 +14,18 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const isMobile = window.innerWidth <= 640;
 
+// WebSocket message types
+const WentOnline = 1
+const WentOffline = 2
+const TextMessage = 3
+const FileMessage = 4
+const IsTyping = 5
+const MessageRead = 6
+const ErrorOccurred = 7
+const MessageIdCreated = 8
+const NewUnreadCount = 9
+const TypingStopped = 10 
+
 // Prefetch knobs
 const PREFETCH_COUNT = 5; // limit number of dialogs to prefetch
 const PREFETCH_CONCURRENCY = 2; // limit concurrent requests
@@ -135,6 +147,8 @@ const Main = () => {
           updatedDialogs[idx] = dialog;
           return updatedDialogs;
         });
+      } else if (data.msg_type === 3) {
+        return null; // Ignore non-text messages for now
       }
     } catch (_) {}
     };
@@ -151,6 +165,25 @@ const Main = () => {
   const handleOpenChats = () => setOpenTab({ settings: false, chatList: true, chat: false, contacts: false });
   const handleOpenSettings = () => setOpenTab({ settings: true, chatList: false, chat: false, contacts: false });
 
+  const updateDialogLastMessage = (userId, message, sent) => {
+    setDialogs((prev) =>
+      prev.map((dialog) =>
+        String(dialog.other_user_id) === String(userId)
+          ? {
+              ...dialog,
+              last_message: {
+                text: message,
+                sent: sent,
+                read: false,
+                sender: localStorage.getItem("user_id"),
+                out: true,
+              },
+              unread_count: 0,
+            }
+          : dialog
+      )
+    );
+  };
   if (isMobile) {
     return (
       <div>
@@ -235,6 +268,7 @@ const Main = () => {
                     if (createChat) setCreateChat(null);
                   }}
                   addDialog={addDialog}
+                  updateDialogLastMessage={updateDialogLastMessage}
                 />
               </motion.div>
             ) : null}

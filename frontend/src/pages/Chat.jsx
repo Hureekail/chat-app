@@ -11,7 +11,7 @@ const MSG_FILE = 4;
 const MSG_READ = 6;
 const MSG_ID_CREATED = 8;
 
-const Chat = ({ dialog, onClose, initialMessages = null, ws = null }) => {
+const Chat = ({ dialog, onClose, updateDialogLastMessage, initialMessages = null, ws = null }) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,13 +29,26 @@ const Chat = ({ dialog, onClose, initialMessages = null, ws = null }) => {
     }
   }, [loadMessages]);
 
+  useEffect(() => {
+  if (!ws || !sortedMessages.length) return;
+  // Find the last incoming message that is not read
+  const lastIncoming = [...sortedMessages].reverse().find(msg => !msg.out && !msg.read);
+  if (lastIncoming) {
+    ws.send(JSON.stringify({
+      msg_type: 6, // MSG_READ
+      message_id: lastIncoming.id,
+      user_pk: String(dialog.other_user_id),
+    }));
+  }
+  }, [sortedMessages, ws, dialog.other_user_id]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    const randomId = -Date.now();
     const trimmed = message.trim();
     if (!trimmed) return;
     try {
       if (ws && ws.readyState === WebSocket.OPEN) {
-        const randomId = -Date.now();
         ws.send(
           JSON.stringify({
             msg_type: MSG_TEXT, // TextMessage
@@ -55,6 +68,8 @@ const Chat = ({ dialog, onClose, initialMessages = null, ws = null }) => {
             sent: Math.floor(Date.now() / 1000)
           }
           ]);
+        updateDialogLastMessage(dialog.other_user_id, message);
+        console.log(dialog.other_user_id, message, randomId);
       }
     } catch (_) {}
     setMessage("");
