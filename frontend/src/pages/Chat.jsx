@@ -11,7 +11,7 @@ const MSG_FILE = 4;
 const MSG_READ = 6;
 const MSG_ID_CREATED = 8;
 
-const Chat = ({ dialog, onClose, updateDialogLastMessage, initialMessages = null, ws = null }) => {
+const Chat = ({ dialog, onClose, updateDialogLastMessage, updateMessagesForUser, initialMessages = null, ws = null }) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -58,16 +58,20 @@ const Chat = ({ dialog, onClose, updateDialogLastMessage, initialMessages = null
           })
         );
         
-        setLoadMessages((prev) => [
-          ...prev,
-          {
-          id: randomId,
-            text: trimmed,
-            out: true,
-            read: false,
-            sent: Math.floor(Date.now() / 1000)
-          }
-          ]);
+        setLoadMessages((prev) => {
+          const updated = [
+            ...prev,
+            {
+              id: randomId,
+              text: trimmed,
+              out: true,
+              read: false,
+              sent: Math.floor(Date.now() / 1000)
+            }
+          ];
+          updateMessagesForUser(dialog.other_user_id, updated);
+          return updated;
+          });
         updateDialogLastMessage(dialog.other_user_id, message);
         console.log(dialog.other_user_id, message, randomId);
       }

@@ -184,6 +184,12 @@ const Main = () => {
       )
     );
   };
+  const updateMessagesForUser = (userId, messages) => {
+    setMessagesByUserId(prev => ({
+      ...prev,
+      [userId]: messages,
+    }));
+  };
   if (isMobile) {
     return (
       <div>
@@ -269,6 +275,7 @@ const Main = () => {
                   }}
                   addDialog={addDialog}
                   updateDialogLastMessage={updateDialogLastMessage}
+                  updateMessagesForUser={updateMessagesForUser}
                 />
               </motion.div>
             ) : null}
