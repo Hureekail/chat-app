@@ -42,8 +42,8 @@ const Main = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedChatId, setSelectedChatId] = useState(null);
-  const [createChat, setCreateChat] = useState(null);
   const wsRef = useRef(null);
+  const currentUserId = localStorage.getItem("user_id");
 
   useEffect(() => {
     setLoading(true);
@@ -92,7 +92,6 @@ const Main = () => {
 
   const addDialog = (dialog) => {
     setDialogs((prev) => {
-      // Prevent duplicates
       if (prev.some(d => d.other_user_id === dialog.other_user_id)) return prev;
       return [dialog, ...prev];
     });
@@ -101,7 +100,7 @@ const Main = () => {
   console.log("selectedChatId:", selectedChatId);
   console.log("dialogs:", dialogs);
 
-  // Shared WebSocket connection
+  // Centralized WebSocket connection
   useEffect(() => {
     const wsUrl = `ws://localhost:8000/chat_ws/`;
     const ws = new WebSocket(wsUrl);
@@ -110,47 +109,83 @@ const Main = () => {
     ws.onopen = () => {};
     ws.onmessage = (event) => {
       try {
-      const data = JSON.parse(event.data);
-      console.log("📩 WS message received:", data); 
-      // Only handle text messages (adjust as needed)
-      if (data.msg_type === 3) {
-        setDialogs((prevDialogs) => {
-          // Find dialog by other_user_id
-          const idx = prevDialogs.findIndex(
-            (d) => String(d.other_user_id) === String(data.sender) || String(d.other_user_id) === String(data.receiver)
-          );
+        const data = JSON.parse(event.data);
+        console.log("📩 WS message received:", data);
+        
+        if (data.msg_type === TextMessage) { 
+          const messageUserId = String(data.sender) === String(currentUserId) 
+            ? String(data.recipient) 
+            : String(data.sender);
           
-          if (idx === -1) {
-            api
-              .get("api/dialogs/")
-              .then((res) => {
+          // Add message to messagesByUserId
+          setMessagesByUserId(prev => {
+            const newMessage = {
+              id: data.random_id || data.db_id,
+              text: data.text,
+              out: String(data.sender) === String(currentUserId),
+              read: false,
+              sent: data.sent || Math.floor(Date.now() / 1000),
+              sender: data.sender,
+              recipient: data.recipient,
+              sender_username: data.sender_username,
+              file: data.file
+            };
+            
+            return {
+              ...prev,
+              [messageUserId]: [...(prev[messageUserId] || []), newMessage]
+            };
+          });
+          
+          // Update dialog list
+          setDialogs(prevDialogs => {
+            const idx = prevDialogs.findIndex(d => String(d.other_user_id) === messageUserId);
+            if (idx === -1) {
+              // If dialog doesn't exist, fetch dialogs
+              api.get("api/dialogs/").then((res) => {
                 const items = Array.isArray(res.data) ? res.data : (res.data?.data || []);
                 setDialogs(items);
-              })
+              });
+              return prevDialogs;
             }
-
-          // Update last_message and unread_count
-          const updatedDialogs = [...prevDialogs];
-          const dialog = { ...updatedDialogs[idx] };
-          dialog.last_message = {
-            ...dialog.last_message,
-            text: data.text,
-            sent: Math.floor(Date.now() / 1000),
-            read: false,
-            sender: data.sender,
-            out: String(data.sender) !== String(dialog.other_user_id),
-          };
-          // Optionally increment unread_count if incoming
-          if (String(data.sender) === String(dialog.other_user_id)) {
-            dialog.unread_count = (dialog.unread_count || 0) + 1;
-          }
-          updatedDialogs[idx] = dialog;
-          return updatedDialogs;
-        });
-      } else if (data.msg_type === 3) {
-        return null; // Ignore non-text messages for now
+            
+            const updatedDialogs = [...prevDialogs];
+            const dialog = { ...updatedDialogs[idx] };
+            dialog.last_message = {
+              text: data.text,
+              sent: data.sent || Math.floor(Date.now() / 1000),
+              read: false,
+              sender: data.sender,
+              out: String(data.sender) === String(currentUserId),
+            };
+            
+            // Increment unread count if incoming message
+            if (String(data.sender) === String(dialog.other_user_id)) {
+              dialog.unread_count = (dialog.unread_count || 0) + 1;
+            }
+            
+            updatedDialogs[idx] = dialog;
+            return updatedDialogs;
+          });
+        } else if (data.msg_type === MessageIdCreated) {
+          // Replace temporary ID with real database ID
+          setMessagesByUserId(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(userId => {
+              updated[userId] = updated[userId].map(msg => 
+                msg.id === data.random_id ? { 
+                  ...msg, 
+                  id: data.db_id,
+                  sent: data.sent || msg.sent
+                } : msg
+              );
+            });
+            return updated;
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
       }
-    } catch (_) {}
     };
     ws.onerror = () => {};
     ws.onclose = () => {};
@@ -165,17 +200,17 @@ const Main = () => {
   const handleOpenChats = () => setOpenTab({ settings: false, chatList: true, chat: false, contacts: false });
   const handleOpenSettings = () => setOpenTab({ settings: true, chatList: false, chat: false, contacts: false });
 
-  const updateDialogLastMessage = (userId, message, sent) => {
-    setDialogs((prev) =>
-      prev.map((dialog) =>
+  const updateDialogLastMessage = (userId, message) => {
+    setDialogs(prev =>
+      prev.map(dialog =>
         String(dialog.other_user_id) === String(userId)
           ? {
               ...dialog,
               last_message: {
                 text: message,
-                sent: sent,
+                sent: Math.floor(Date.now() / 1000),
                 read: false,
-                sender: localStorage.getItem("user_id"),
+                sender: currentUserId,
                 out: true,
               },
               unread_count: 0,
@@ -184,12 +219,45 @@ const Main = () => {
       )
     );
   };
-  const updateMessagesForUser = (userId, messages) => {
+
+  const sendMessage = (userId, text) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.error("WebSocket not connected");
+      return;
+    }
+    
+    const randomId = -Date.now();
+    const tempMessage = {
+      id: randomId,
+      text,
+      out: true,
+      read: false,
+      sent: Math.floor(Date.now() / 1000),
+      sender: currentUserId,
+      recipient: userId,
+      sender_username: localStorage.getItem("username"),
+      file: null
+    };
+    
+    // Optimistically add to local state
     setMessagesByUserId(prev => ({
       ...prev,
-      [userId]: messages,
+      [userId]: [...(prev[userId] || []), tempMessage]
+    }));
+    
+    // Update dialog last message
+    updateDialogLastMessage(userId, text);
+    
+    // Send via WebSocket
+    wsRef.current.send(JSON.stringify({
+      msg_type: 3, // TextMessage
+      text,
+      user_pk: String(userId),
+      random_id: randomId
     }));
   };
+
+  console.log(messagesByUserId)
   if (isMobile) {
     return (
       <div>
@@ -249,7 +317,7 @@ const Main = () => {
           </div>
         </div>
           <AnimatePresence mode="wait">
-            {selectedChatId || createChat ? (
+            {selectedChatId ? (
               <motion.div
                 initial={{ x: 400 }}
                 animate={{ x: 0 }}
@@ -258,24 +326,14 @@ const Main = () => {
                 className="fixed inset-0 z-50 bg-white dark:bg-black"
               >
                 <Chat
-                  dialog={
+                  dialog={dialogs.find(dialog => dialog.id === selectedChatId)}
+                  messages={
                   selectedChatId
-                    ? dialogs.find(dialog => dialog.id === selectedChatId)
-                    : { ...createChat, other_user_id: createChat?.pk, create: true }
+                  ? (dialogs.find(d => d.id === selectedChatId) && messagesByUserId[dialogs.find(d => d.id === selectedChatId).other_user_id]) || []
+                  : []
                   }
-                  initialMessages={
-                  selectedChatId
-                  ? (dialogs.find(d => d.id === selectedChatId) && messagesByUserId[dialogs.find(d => d.id === selectedChatId).other_user_id]) || null
-                  : null
-                  }
-                  ws={wsRef.current}
-                  onClose={() => {
-                    if (selectedChatId) setSelectedChatId(0);
-                    if (createChat) setCreateChat(null);
-                  }}
-                  addDialog={addDialog}
-                  updateDialogLastMessage={updateDialogLastMessage}
-                  updateMessagesForUser={updateMessagesForUser}
+                  onSendMessage={sendMessage}
+                  onClose={() => {setSelectedChatId(0)}}
                 />
               </motion.div>
             ) : null}

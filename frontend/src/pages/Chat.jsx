@@ -2,155 +2,35 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { MdArrowBackIos, MdSend } from "react-icons/md";
 import { BiCheck } from "react-icons/bi"; 
 import { BiCheckDouble } from "react-icons/bi"; 
-import api from "../api";
 import "../styles/chats.css";
 
-// WebSocket message types
-const MSG_TEXT = 3;
-const MSG_FILE = 4;
-const MSG_READ = 6;
-const MSG_ID_CREATED = 8;
 
-const Chat = ({ dialog, onClose, updateDialogLastMessage, updateMessagesForUser, initialMessages = null, ws = null }) => {
+const Chat = ({ dialog, messages = [], onSendMessage, onClose }) => {
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [loadMessages, setLoadMessages] = useState(initialMessages || []);
   const messagesEndRef = useRef(null);
 
   const sortedMessages = useMemo(() => {
-    return [...(loadMessages || [])].sort((a, b) => (a.sent || 0) - (b.sent || 0));
-  }, [loadMessages]);
+    return [...messages].sort((a, b) => (a.sent || 0) - (b.sent || 0));
+  }, [messages]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [loadMessages]);
-
-  useEffect(() => {
-  if (!ws || !sortedMessages.length) return;
-  // Find the last incoming message that is not read
-  const lastIncoming = [...sortedMessages].reverse().find(msg => !msg.out && !msg.read);
-  if (lastIncoming) {
-    ws.send(JSON.stringify({
-      msg_type: 6, // MSG_READ
-      message_id: lastIncoming.id,
-      user_pk: String(dialog.other_user_id),
-    }));
-  }
-  }, [sortedMessages, ws, dialog.other_user_id]);
+  }, [messages]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const randomId = -Date.now();
     const trimmed = message.trim();
     if (!trimmed) return;
-    try {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            msg_type: MSG_TEXT, // TextMessage
-            text: trimmed,
-            user_pk: String(dialog.other_user_id),
-            random_id: randomId
-          })
-        );
-        
-        setLoadMessages((prev) => {
-          const updated = [
-            ...prev,
-            {
-              id: randomId,
-              text: trimmed,
-              out: true,
-              read: false,
-              sent: Math.floor(Date.now() / 1000)
-            }
-          ];
-          updateMessagesForUser(dialog.other_user_id, updated);
-          return updated;
-          });
-        updateDialogLastMessage(dialog.other_user_id, message);
-        console.log(dialog.other_user_id, message, randomId);
-      }
-    } catch (_) {}
+    
+
+    onSendMessage(dialog.other_user_id, trimmed);
     setMessage("");
   };
+
   const avatarUrl = "https://ui-avatars.com/api/?name=" + encodeURIComponent(dialog.username[0]);
-
-  useEffect(() => {
-    // If we already have initial messages for this dialog, do not refetch
-    if (initialMessages && Array.isArray(initialMessages) && initialMessages.length > 0) {
-      setLoadMessages(initialMessages);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    api.get(`api/messages/${dialog.other_user_id}/`)
-      .then((res) => {
-        const items = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-        setLoadMessages(items);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
-      });
-  }, [dialog.other_user_id, initialMessages]);
-
-  // Handle incoming WebSocket messages
-  useEffect(() => {
-    if (!ws) return;
-    const onMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const type = data.msg_type;
-        if (type === MSG_TEXT) {
-          // TextMessage
-          if (String(data.sender) === String(dialog.other_user_id) || String(data.receiver) === String(dialog.other_user_id)) {
-            setLoadMessages((prev) => [
-              ...prev,
-              {
-                id: data.random_id,
-                text: data.text,
-                out: String(data.sender) !== String(dialog.other_user_id),
-                read: false,
-                sent: Math.floor(Date.now() / 1000)
-              }
-            ]);
-          }
-        } else if (type === MSG_ID_CREATED) {
-          // MessageIdCreated: replace temporary id with db id
-          setLoadMessages((prev) => prev.map((m) => (m.id === data.random_id ? { ...m, id: data.db_id } : m)));
-        } else if (type === MSG_READ) {
-          // MessageRead: mark as read
-          setLoadMessages((prev) => prev.map((m) => (m.id === data.message_id ? { ...m, read: true } : m)));
-        } else if (type === MSG_FILE) {
-          // FileMessage
-          if (String(data.sender) === String(dialog.other_user_id) || String(data.receiver) === String(dialog.other_user_id)) {
-            setLoadMessages((prev) => [
-              ...prev,
-              {
-                id: data.db_id,
-                text: (data.file && (data.file.original_filename || data.file.name)) || "File",
-                out: String(data.sender) !== String(dialog.other_user_id),
-                read: false,
-                sent: Math.floor(Date.now() / 1000)
-              }
-            ]);
-          }
-        }
-      } catch (_) {
-        // ignore malformed events
-      }
-    };
-    ws.addEventListener('message', onMessage);
-    return () => {
-      try { ws.removeEventListener('message', onMessage); } catch (_) {}
-    };
-  }, [ws, dialog.other_user_id]);
 
   return (
     <div className="flex flex-col h-[100dvh]">
@@ -176,7 +56,7 @@ const Chat = ({ dialog, onClose, updateDialogLastMessage, updateMessagesForUser,
 
       </div>
       <div className="flex-1 overflow-y-auto">
-        {loadMessages && Array.isArray(loadMessages) && loadMessages.length > 0 ? (
+        {messages && Array.isArray(messages) && messages.length > 0 ? (
           <div className="flex flex-col gap-2 p-4">
             {sortedMessages.map((msg) => (
                 <div
