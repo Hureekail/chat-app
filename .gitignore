@@ -1,1 +1,12 @@
 *.env
+__pycache__/
+frontend/node_modules/
+backend/db.sqlite3
+backend/.env/
+backend/accounts/__pycache__/
+backend/chats/__pycache__/
+backend/accounts/migrations/
+backend/chats/migrations/
+backend/chats/consumers/__pycache__/
+backend/staticfiles/
+backend/media/
